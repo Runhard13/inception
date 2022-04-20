@@ -1,0 +1,103 @@
+version: '3.9'
+services:
+
+  nginx:
+    build: requirements/nginx/
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - wordpress
+    networks:
+      - app
+    restart: always
+    volumes:
+      - "~/Desktop/inception_volumes/wordpress:/var/www/html"
+
+  wordpress:
+    build: requirements/wordpress/
+    container_name: wordpress
+    ports:
+      - "9000:9000"
+    volumes:
+      - "~/Desktop/inception_volumes/wordpress:/var/www/html"
+    depends_on:
+      - mariadb
+      - redis
+    networks:
+      - app
+    restart: always
+    environment:
+      MYSQL_HOST:       ${MYSQL_HOST}
+      WP_DATABASE_NAME: ${WP_DATABASE_NAME}
+      WP_DATABASE_USR:  ${WP_DATABASE_USR}
+      WP_DATABASE_PWD:  ${WP_DATABASE_PWD}
+      DOMAIN_NAME:      ${DOMAIN_NAME}
+      WP_TITLE:         ${WP_TITLE}
+      WP_ADMIN_USR:     ${WP_ADMIN_USR}
+      WP_ADMIN_PWD:     ${WP_ADMIN_PWD}
+      WP_ADMIN_EMAIL:   ${WP_ADMIN_EMAIL}
+      WP_USR:           ${WP_USR}
+      WP_PWD:           ${WP_PWD}
+      WP_EMAIL:         ${WP_EMAIL}
+
+  mariadb:
+    build: requirements/mariadb/
+    container_name: mariadb
+    ports:
+      - "3306:3306"
+    volumes:
+      - "~/Desktop/inception_volumes/mariadb:/var/lib/mysql"
+    networks:
+      - app
+    restart: always
+    environment:
+      MYSQL_ROOT_PWD:   ${MYSQL_ROOT_PWD}
+      WP_DATABASE_NAME: ${WP_DATABASE_NAME}
+      WP_DATABASE_USR:  ${WP_DATABASE_USR}
+      WP_DATABASE_PWD:  ${WP_DATABASE_PWD}
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - app
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./portainer-data:/data"
+    ports:
+      - "8000:8000"
+      - "9443:9443"
+
+  redis:
+    build: requirements/bonus/redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app
+    restart: always
+    environment:
+      REDIS_PWD: ${REDIS_PWD}`
+
+  ftp-server:
+    build: requirements/bonus/ftps
+    container_name: ftp-server
+    ports:
+      - "21:21"
+      - "21100-21110:21100-21110"
+    volumes:
+      - "~/Desktop/inception_volumes/wordpress:/var/www/html"
+    networks:
+      - app
+    restart: always
+    environment:
+      FTP_USR: ${FTP_USR}
+      FTP_PWD: ${FTP_PWD}
+networks:
+  app:
